@@ -21,7 +21,7 @@ def main(sample_group):
     for sr_name in SRs.keys():
         is_last = (sr_name == next(reversed(SRs)))
         tab.print_table_cell(sr_name, is_last=is_last),
-    print "\\hline"
+    tab.add_hline()
 
     for name, (root_file_pattern, scale_factor, is_reco) in sample_dict.iteritems():
         tab.print_table_cell(name.replace("_", "\\_")),

@@ -3,6 +3,9 @@ from textwrap import dedent
 from config import DEFAULT_COLUMN_WIDTH
 
 
+def add_hline():
+    print "\\hline"
+
 def print_header(name, n_columns):
     print dedent("""
     """+name+"""
