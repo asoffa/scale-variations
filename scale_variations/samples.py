@@ -16,7 +16,7 @@ class Yield:
         hname = 'h_{}'.format(_nhist)
 
         h = TH1D(hname, hname, 1, -1e30, 1e30)
-        cmd = "%s>>+%s"%(dummy_var, h.GetName())
+        cmd = "{}>>+{}".format(dummy_var, h.GetName())
         tree.Draw(cmd, "({})*{}*{}".format(cut, weight, scale_factor), "goff")
         stat_err = Double(0.0)
         integral = h.IntegralAndError(0, -1, stat_err)
