@@ -1,11 +1,18 @@
 
-LUMI_TO_SCALE_TO = 10.0  # desired luminosity (fb^-1)
-
-SAMPLE_FILE = "/data/uclhc/uci/user/asoffa/projects/ss3l/repos/scale_variations_n0224/run_test/scale-variations/scale_variations/samples.tab"
-
+USE_SAMPLE_GROUPS    = False
+LUMI_TO_SCALE_TO     = 10.0  # desired luminosity (fb^-1)
+USE_RAW_N_EVENTS     = False
+USE_RAW_LUMI         = False
+SAMPLE_FILE          = "/data/uclhc/uci/user/asoffa/projects/ss3l/repos/scale_variations_n0224/run_test/scale-variations/scale_variations/samples.tab"
 DEFAULT_COLUMN_WIDTH = 25
 
+
 SAMPLE_GROUPS = [
+    "WZ",
+    "ZZ",
+]
+
+SAMPLES = [
     #"WplvWmqq",
     #"WpqqWmlv",
     #"WlvZqq",
