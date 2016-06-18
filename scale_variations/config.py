@@ -1,5 +1,5 @@
 
-USE_SAMPLE_GROUPS    = False
+USE_SAMPLE_GROUPS    = True
 LUMI_TO_SCALE_TO     = 10.0  # desired luminosity (fb^-1)
 USE_RAW_N_EVENTS     = False
 USE_RAW_LUMI         = False
@@ -9,7 +9,7 @@ DEFAULT_COLUMN_WIDTH = 25
 
 SAMPLE_GROUPS = [
     "WZ",
-    "ZZ",
+    #"ZZ",
 ]
 
 SAMPLES = [

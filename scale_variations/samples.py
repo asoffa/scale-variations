@@ -2,32 +2,54 @@
 import os
 import fnmatch
 from collections import OrderedDict, namedtuple
-from ROOT import TH1D, Double, TFile
-from config import SAMPLE_FILE, LUMI_TO_SCALE_TO, USE_RAW_LUMI, USE_RAW_N_EVENTS
+from math import sqrt
+from ROOT import TChain, TH1D, Double, TFile
+from config import SAMPLE_FILE, LUMI_TO_SCALE_TO, USE_SAMPLE_GROUPS, USE_RAW_LUMI, USE_RAW_N_EVENTS
 
 
 PB_TO_FB = 1000.0
 
 
-Sample = namedtuple("Sample", "root_file_pattern scale_factor is_reco")
+Sample = namedtuple("Sample", "name  group  root_file_pattern  scale_factor  is_reco")
+Yield  = namedtuple("Yield",  "n_weighted  stat_err")
 
-class Yield:
-    def __init__(self, tree, cut, weight, scale_factor=1.0, dummy_var="event_number", _nhist = 0):
-        # ensure unique histogram names so ROOT doesn't complain
-        _nhist += 1
-        hname = 'h_{}'.format(_nhist)
 
-        h = TH1D(hname, hname, 1, -1e30, 1e30)
-        cmd = "{}>>+{}".format(dummy_var, h.GetName())
-        tree.Draw(cmd, "({})*{}*{}".format(cut, weight, scale_factor), "goff")
-        stat_err = Double(0.0)
-        integral = h.IntegralAndError(0, -1, stat_err)
+def get_single_yield(sample, cut, _nhist=0):
+    if sample.is_reco:
+        chain     = TChain("superNt")
+        weight    = "event_weight"
+        dummy_var = "event_number"
+    else:
+        chain     = TChain("SuperTruth")
+        weight    = "mcEventWeight"
+        dummy_var = "eventNumber"
 
-        self.n_weighted = integral
-        self.stat_err = stat_err
+    chain.Add(sample.root_file_pattern)
 
-        self.n_unweighted = tree.GetEntries()
-        self.scale_factor = scale_factor
+    # ensure unique histogram names so ROOT doesn't complain
+    _nhist += 1
+    hname = 'h_{}'.format(_nhist)
+
+    h = TH1D(hname, hname, 1, -1e30, 1e30)
+    cmd = "{}>>+{}".format(dummy_var, h.GetName())
+    chain.Draw(cmd, "({})*{}*{}".format(cut, weight, sample.scale_factor), "goff")
+    stat_err = Double(0.0)
+    integral = h.IntegralAndError(0, -1, stat_err)
+
+    n_weighted = integral
+    stat_err = stat_err
+
+    return Yield(n_weighted, stat_err)
+
+
+def get_group_yield(sample_group, cut):
+    sum_of_yields = 0.
+    sum_of_squared_stat_errors = 0.
+    for s in sample_group:
+        y = get_single_yield(s, cut)
+        sum_of_yields += y.n_weighted
+        sum_of_squared_stat_errors += y.stat_err**2
+    return Yield(sum_of_yields, sqrt(sum_of_squared_stat_errors))
 
 
 def get_root_file_pattern(dsid, is_reco=False):
@@ -41,6 +63,7 @@ def get_sum_of_weights(root_file_pattern):
     search_dir = "/".join(root_file_pattern.split("/")[:-1])
     if not os.path.isdir(search_dir):
         return 0.
+        #raise Exception("No such directory: {}".format(search_dir))
     for f in os.listdir(search_dir):
         if fnmatch.fnmatch(f, "*.root*"):
             files.append(search_dir+"/"+f)
@@ -50,12 +73,30 @@ def get_sum_of_weights(root_file_pattern):
     for f in files:
         rootfile = TFile(f, "READ")
         if not rootfile or not rootfile.Get("CutflowWeighted"):
-            return 0.
+            raise Exception("No 'CutflowWeighted' histogram found in {}".format(rootfile))
         sumw += rootfile.Get("CutflowWeighted").GetBinContent(1)
     return sumw
 
 
-def get_samples(short_name_prefix):
+def get_base_name(short_name):
+    return "_".join(short_name.split("_")[:-1])
+
+
+def get_sample_groups(token, use_group=True):
+    sample_dict = get_samples(token, use_group=use_group)
+    sample_groups = OrderedDict()
+    for s in sample_dict.values():
+        if get_base_name(s.group) != token:
+            continue
+        if s.group not in sample_groups.keys():
+            sample_groups[s.group] = []
+        sample_groups[s.group].append(s)
+    return sample_groups
+    # reset default
+    use_group=True
+
+
+def get_samples(token, use_group=False):
     samples = OrderedDict()
     with open(SAMPLE_FILE, "r") as f:
         for line in f:
@@ -64,31 +105,39 @@ def get_samples(short_name_prefix):
                 continue
             values = line.split()
             short_name = values[1]
-            if "_".join(short_name.split("_")[:-1]) == short_name_prefix:
-                dsid     = values[0]
-                is_reco  = short_name.endswith("_reco")
-                root_file_pattern = get_root_file_pattern(dsid, is_reco=is_reco)
-                if is_reco:
+            group      = values[2]
+            if USE_SAMPLE_GROUPS:
+                is_match = get_base_name(group) == token
+            else:
+                is_match = get_base_name(short_name) == token
+            if not is_match:
+                continue
+            dsid     = values[0]
+            is_reco  = short_name.endswith("_reco")
+            root_file_pattern = get_root_file_pattern(dsid, is_reco=is_reco)
+            if is_reco:
+                lumi = float(values[4])
+                scale_factor = LUMI_TO_SCALE_TO / lumi
+            else:
+                if USE_RAW_LUMI:
                     lumi = float(values[4])
                     scale_factor = LUMI_TO_SCALE_TO / lumi
                 else:
-                    if USE_RAW_LUMI:
-                        lumi = float(values[4])
-                        scale_factor = LUMI_TO_SCALE_TO / lumi
+                    if USE_RAW_N_EVENTS:
+                        n_events = float(values[3])
                     else:
-                        if USE_RAW_N_EVENTS:
-                            n_events = float(values[3])
-                        else:
-                            n_events = get_sum_of_weights(root_file_pattern)
-                        if n_events == 0:
-                            continue
-                        raw_xsec = float(values[5]) * PB_TO_FB
-                        BR       = float(values[6])
-                        filt_eff = float(values[7])
-                        k_factor = float(values[8])
-                        lumi = n_events / (raw_xsec * BR * filt_eff * k_factor)
-                        scale_factor = LUMI_TO_SCALE_TO / lumi
-                samples[short_name] = Sample(root_file_pattern, scale_factor, is_reco)
+                        n_events = get_sum_of_weights(root_file_pattern)
+                    if n_events == 0:
+                        continue
+                    raw_xsec = float(values[5]) * PB_TO_FB
+                    BR       = float(values[6])
+                    filt_eff = float(values[7])
+                    k_factor = float(values[8])
+                    lumi = n_events / (raw_xsec * BR * filt_eff * k_factor)
+                    scale_factor = LUMI_TO_SCALE_TO / lumi
+            samples[short_name] = Sample(short_name, group, root_file_pattern, scale_factor, is_reco)
+    # reset default
+    use_group=False
     return samples
 
 

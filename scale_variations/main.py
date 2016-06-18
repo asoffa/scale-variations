@@ -12,8 +12,11 @@ ROOT.gErrorIgnoreLevel = ROOT.kError
 #-------------------------------------------------------------------------------
 
 def main(sample_set):
-    sample_dict = samples.get_samples(sample_set)
-    #samples.print_samples(sample_dict)
+    if USE_SAMPLE_GROUPS:
+        sample_dict = samples.get_sample_groups(sample_set)
+    else:
+        sample_dict = samples.get_samples(sample_set)
+        #samples.print_samples(sample_dict)
 
     tab.print_header(sample_set, len(SRs) + 1)
     tab.print_table_cell(""),
@@ -25,21 +28,17 @@ def main(sample_set):
 
     for name, s in sample_dict.iteritems():
         tab.print_table_cell(name.replace("_", "\\_")),
-        if s.is_reco:
-            chain = TChain("superNt")
-            sr_dict = SRs_reco
-        else:
-            chain = TChain("SuperTruth")
-            sr_dict = SRs
-        chain.Add(s.root_file_pattern)
+
+        is_reco = s[0].is_reco if USE_SAMPLE_GROUPS else s.is_reco
+        sr_dict = SRs_reco if is_reco else SRs
+
         for sr_name, sr_cut in sr_dict.iteritems():
             is_last = (sr_name == next(reversed(sr_dict)))
-            if s.is_reco:
-                sr_yield = samples.Yield(chain, sr_cut, "event_weight", scale_factor=s.scale_factor, dummy_var="event_number")
+            if USE_SAMPLE_GROUPS:
+                sr_yield = samples.get_group_yield(s, sr_cut)
             else:
-                sr_yield = samples.Yield(chain, sr_cut, "mcEventWeight", scale_factor=s.scale_factor, dummy_var="eventNumber")
+                sr_yield = samples.get_single_yield(s, sr_cut)
             table_entry = "${:.2f} \pm {:.2f}$".format(sr_yield.n_weighted, sr_yield.stat_err)
-            #table_entry = "${:.2f}$".format(sr_yield.scale_factor)
             tab.print_table_cell(table_entry, is_last=is_last),
 
     tab.print_footer()
@@ -48,6 +47,10 @@ def main(sample_set):
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    for s in SAMPLES:
-        main(s)
+    if USE_SAMPLE_GROUPS:
+        for s in SAMPLE_GROUPS:
+            main(s)
+    else:
+        for s in SAMPLES:
+            main(s)
 
