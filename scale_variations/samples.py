@@ -1,13 +1,15 @@
 
 import os
 import fnmatch
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from ROOT import TH1D, Double, TFile
-from config import SAMPLE_FILE, LUMI_TO_SCALE_TO
+from config import SAMPLE_FILE, LUMI_TO_SCALE_TO, USE_RAW_LUMI, USE_RAW_N_EVENTS
 
 
 PB_TO_FB = 1000.0
 
+
+Sample = namedtuple("Sample", "root_file_pattern scale_factor is_reco")
 
 class Yield:
     def __init__(self, tree, cut, weight, scale_factor=1.0, dummy_var="event_number", _nhist = 0):
@@ -21,9 +23,11 @@ class Yield:
         stat_err = Double(0.0)
         integral = h.IntegralAndError(0, -1, stat_err)
 
-        self.n_unweighted = tree.GetEntries()
         self.n_weighted = integral
         self.stat_err = stat_err
+
+        self.n_unweighted = tree.GetEntries()
+        self.scale_factor = scale_factor
 
 
 def get_root_file_pattern(dsid, is_reco=False):
@@ -36,18 +40,18 @@ def get_sum_of_weights(root_file_pattern):
     files = []
     search_dir = "/".join(root_file_pattern.split("/")[:-1])
     if not os.path.isdir(search_dir):
-        return 0
+        return 0.
     for f in os.listdir(search_dir):
         if fnmatch.fnmatch(f, "*.root*"):
             files.append(search_dir+"/"+f)
-    if len(files) == 0:
+    if len(files) == 0.:
         raise Exception("no ROOT files found matching pattern '{}'".format(root_file_pattern))
-    elif len(files) > 1:  #TODO: generalize to allow for multiple files
-        raise Exception("multiple ROOT files found matching patter '{}'".format(root_file_pattern))
-    rootfile = TFile(files[0], "READ")
-    if not rootfile or not rootfile.Get("CutflowWeighted"):
-        return 0
-    sumw = rootfile.Get("CutflowWeighted").GetBinContent(1)
+    sumw = 0.
+    for f in files:
+        rootfile = TFile(f, "READ")
+        if not rootfile or not rootfile.Get("CutflowWeighted"):
+            return 0.
+        sumw += rootfile.Get("CutflowWeighted").GetBinContent(1)
     return sumw
 
 
@@ -65,19 +69,26 @@ def get_samples(short_name_prefix):
                 is_reco  = short_name.endswith("_reco")
                 root_file_pattern = get_root_file_pattern(dsid, is_reco=is_reco)
                 if is_reco:
-                    lumi = float(values[3])
+                    lumi = float(values[4])
                     scale_factor = LUMI_TO_SCALE_TO / lumi
                 else:
-                    n_events = get_sum_of_weights(root_file_pattern)
-                    if n_events == 0:
-                        continue
-                    raw_xsec = float(values[4]) * PB_TO_FB
-                    BR       = float(values[5])
-                    filt_eff = float(values[6])
-                    k_factor = float(values[7])
-                    lumi = n_events / (raw_xsec * BR * filt_eff * k_factor)
-                    scale_factor = LUMI_TO_SCALE_TO / lumi
-                samples[short_name] = (root_file_pattern, scale_factor, is_reco)
+                    if USE_RAW_LUMI:
+                        lumi = float(values[4])
+                        scale_factor = LUMI_TO_SCALE_TO / lumi
+                    else:
+                        if USE_RAW_N_EVENTS:
+                            n_events = float(values[3])
+                        else:
+                            n_events = get_sum_of_weights(root_file_pattern)
+                        if n_events == 0:
+                            continue
+                        raw_xsec = float(values[5]) * PB_TO_FB
+                        BR       = float(values[6])
+                        filt_eff = float(values[7])
+                        k_factor = float(values[8])
+                        lumi = n_events / (raw_xsec * BR * filt_eff * k_factor)
+                        scale_factor = LUMI_TO_SCALE_TO / lumi
+                samples[short_name] = Sample(root_file_pattern, scale_factor, is_reco)
     return samples
 
 
