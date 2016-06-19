@@ -9,7 +9,7 @@
 # +++ : agrees with value in K-factor column              #
 ###########################################################
 
-# DSID  short name              Group           N_events    lumi (fb^-1)    AMIXsec (pb)    BR      FiltEff     K-factor    Higher-order xsec (pb)  SUSYTools K-factor
+# DSID  short name              group           N_events    lumi (fb^-1)    AMIXsec (pb)    BR      FiltEff     K-factor    Higher-order xsec (pb)  SUSYTools K-factor
 361091  WplvWmqq_nom            -               2000000     80.37           24.885          1.0     1.0         0.91        -                       +++
 363000  WplvWmqq_fac4           -               2000000     79.29           25.224          1.0     1.0         0.91        22.95384                -
 363001  WplvWmqq_fac025         -               2000000     81.74           24.469          1.0     1.0         0.91        22.26679                -

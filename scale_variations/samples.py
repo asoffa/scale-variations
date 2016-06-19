@@ -62,8 +62,8 @@ def get_sum_of_weights(root_file_pattern):
     files = []
     search_dir = "/".join(root_file_pattern.split("/")[:-1])
     if not os.path.isdir(search_dir):
+        print "Warning: no such directory: {} (omitting!)".format(search_dir)
         return 0.
-        #raise Exception("No such directory: {}".format(search_dir))
     for f in os.listdir(search_dir):
         if fnmatch.fnmatch(f, "*.root*"):
             files.append(search_dir+"/"+f)
