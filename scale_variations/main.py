@@ -4,14 +4,20 @@ import samples
 import tabulate as tab
 import ROOT
 from regions import SRs, SRs_reco
-from ROOT import TChain
 from config import USE_SAMPLE_GROUPS, SAMPLE_GROUPS, SAMPLES
+from argparse import ArgumentParser
 
 ROOT.gErrorIgnoreLevel = ROOT.kError
 
 #-------------------------------------------------------------------------------
 
-def main(sample_set):
+def main(sample_set, raw_yields=False, uncertainties_only=False, csv=False, print_scale_factors=False):
+    if USE_SAMPLE_GROUPS and print_scale_factors:
+        print "Subsamples that make up a group each have their own scale factor"
+        print "  --> Disable 'USE_SAMPLE_GROUPS' to print scale factors"
+        return
+    if csv:
+        tab.USE_CSV = True
     if USE_SAMPLE_GROUPS:
         sample_dict = samples.get_sample_groups(sample_set)
     else:
@@ -34,11 +40,31 @@ def main(sample_set):
 
         for sr_name, sr_cut in sr_dict.iteritems():
             is_last = (sr_name == next(reversed(sr_dict)))
-            if USE_SAMPLE_GROUPS:
-                sr_yield = samples.get_group_yield(s, sr_cut)
+            if print_scale_factors:
+                #table_entry = "${}$".format(s.scale_factor)
+                table_entry = "${}$".format(s.lumi)
             else:
-                sr_yield = samples.get_single_yield(s, sr_cut)
-            table_entry = "${:.2f} \pm {:.2f}$".format(sr_yield.n_weighted, sr_yield.stat_err)
+                if USE_SAMPLE_GROUPS:
+                    sr_yield = samples.get_group_yield(s, sr_cut)
+                else:
+                    sr_yield = samples.get_single_yield(s, sr_cut)
+                syield = sr_yield.n_entries if raw_yields else sr_yield.n_weighted
+                if csv:
+                    if uncertainties_only:
+                        if syield == 0.:
+                            table_entry = "indeterminate"
+                        else:
+                            table_entry = sr_yield.stat_err / syield * 100.
+                    else:
+                        table_entry = syield
+                else:
+                    if uncertainties_only:
+                        if syield == 0.:
+                            table_entry = "indeterminate"
+                        else:
+                            table_entry = "$(\pm {:.2f} \%)$".format(sr_yield.stat_err / syield * 100.)
+                    else:
+                        table_entry = "${:.2f} \pm {:.2f}$".format(syield, sr_yield.stat_err)
             tab.print_table_cell(table_entry, is_last=is_last),
 
     tab.print_footer()
@@ -47,10 +73,17 @@ def main(sample_set):
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("-r", "--raw-yields", action="store_true", help="report raw yields instead of weighted")
+    parser.add_argument("-u", "--uncertainties-only", action="store_true", help="report uncertainties only")
+    parser.add_argument("-c", "--csv", action="store_true", help="use CSV format instead of LaTeX")
+    parser.add_argument("-s", "--scale-factors", action="store_true", help="print scale factors instead of yields")
+    args = parser.parse_args()
+
     if USE_SAMPLE_GROUPS:
         for s in SAMPLE_GROUPS:
-            main(s)
+            main(s, raw_yields=args.raw_yields, uncertainties_only=args.uncertainties_only, csv=args.csv, print_scale_factors=args.scale_factors)
     else:
         for s in SAMPLES:
-            main(s)
+            main(s, raw_yields=args.raw_yields, uncertainties_only=args.uncertainties_only, csv=args.csv, print_scale_factors=args.scale_factors)
 
