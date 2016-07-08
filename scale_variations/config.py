@@ -1,18 +1,46 @@
 
-USE_SAMPLE_GROUPS    = True
+#USE_YIELD_GROUPINGS  = False # group variation samples into single
+USE_RPV_SRS          = True # use RPV signal regions
+USE_TRUTH_JETS       = False # use truth jets if set to `True`, else reco or pseudo-reco jets (note: this has nothing to do with whether truth jets were used in overlap removal)
+USE_SAMPLE_GROUPS    = True # use sample group names to group samples if set to `True`, else use individual samples
 LUMI_TO_SCALE_TO     = 10.0  # desired luminosity (fb^-1)
 USE_RAW_N_EVENTS     = False
 USE_RAW_LUMI         = False
 SAMPLE_FILE          = "/data/uclhc/uci/user/asoffa/projects/ss3l/repos/scale_variations_n0224/run_test/scale-variations/scale_variations/samples.tab"
 DEFAULT_COLUMN_WIDTH = 25
+VERBOSE              = False
 
+#YIELD_GROUP_DICT = {
+#    "nom"      : ["nom"                          ],
+#    "scale_up" : ["fac4",   "renorm4",   "qsf4"  ],
+#    "scale_dn" : ["fac025", "renorm025", "qsf025"],
+#}
 
 SAMPLE_GROUPS = [
     "WZ",
-    #"ZZ",
+    "ZZ",
+    #"ttV",
+    #"ttW",
+    #"ttZ",
 ]
 
 SAMPLES = [
+    #### ttW
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttW_Np0",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttW_Np1",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttW_Np2",
+    #"Sherpa_NNPDF30NNLO_ttW",
+
+    #### ttZ
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttee_Np0",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttee_Np1",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttmumu_Np0",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_ttmumu_Np1",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_tttautau_Np0",
+    #"MadGraphPythia8EvtGen_A14NNPDF23LO_tttautau_Np1",
+    #"Sherpa_NNPDF30NNLO_ttll_mll5",
+
+    #### dibosons
     #"WplvWmqq",
     #"WpqqWmlv",
     #"WlvZqq",
@@ -20,11 +48,11 @@ SAMPLES = [
     #"WqqZvv",
     #"ZqqZll",
     #"ZqqZvv",
-    #"llll",
-    "lllvSFMinus",
+    #"lllvSFMinus",
     #"lllvOFMinus",
     #"lllvSFPlus",
     #"lllvOFPlus",
+    #"llll",
     #"llvv",
     #"ggllll",
     #"ggllvv",
