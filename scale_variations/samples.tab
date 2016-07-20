@@ -97,6 +97,7 @@
 
 361066  lllvSFPlus_reco         WZ_reco         -           3.209           -               -       -           -           -                       -
 361066  lllvSFPlus_nom          WZ_nom          600000      234.19          2.5656          1.0     1.0         1.0         -                       0.91
+363498  lllvSFPlus_jetvar       WZ_jetvar       600000      234.19          2.5656          1.0     1.0         1.0         -                       -
 363060  lllvSFPlus_fac4         WZ_fac4         600000      241.41          2.4854          1.0     1.0         1.0         2.4854                  -
 363061  lllvSFPlus_fac025       WZ_fac025       600000      228.5           2.6258          1.0     1.0         1.0         2.6258                  -
 363062  lllvSFPlus_renorm4      WZ_renorm4      600000      253.29          2.3688          1.0     1.0         1.0         2.3688                  -

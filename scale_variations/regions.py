@@ -1,6 +1,6 @@
 
 from collections import OrderedDict
-from config import USE_TRUTH_JETS, USE_RPV_SRS
+from config import USE_TRUTH_JETS, USE_RPV_SRS, USE_SR0b2_j25
 
 
 SRs      = OrderedDict()
@@ -41,7 +41,21 @@ else:
     n_jets_50  = "n_jets_50"
 
 
-if not USE_RPV_SRS:
+if USE_RPV_SRS:
+    SRs[     "SR1b-DD" ] = n_lep_cut(2, is_reco=False) + " && {} >= 1 && {} >= 4 && meff > 1200".format(n_bjets_20, n_jets_50)
+    SRs[     "SR3b-DD" ] = n_lep_cut(2, is_reco=False) + " && {} >= 3 && {} >= 4 && meff > 1000".format(n_bjets_20, n_jets_50)
+    SRs[     "SR1b-GG" ] = n_lep_cut(2, is_reco=False) + " && {} >= 1 && {} >= 6 && meff > 1800".format(n_bjets_20, n_jets_50)
+
+    # just placeholders for now!
+    SRs_reco[     "SR1b-DD" ] = "1"
+    SRs_reco[     "SR3b-DD" ] = "1"
+    SRs_reco[     "SR1b-GG" ] = "1"
+
+elif USE_SR0b2_j25:
+    SRs[    "SR0b2_j25"] = n_lep_cut(2, is_reco=False) + " && {} == 0 && {} >= 6 && met > 150 && meff >  900".format(n_bjets_20, n_jets_25)
+    SRs_reco["SR0b2_j25"] = n_lep_cut(2, is_reco=True ) + " && n_bjets_20 == 0 && n_jets_25 >= 6 && met > 150 && meff >  900"
+
+else:
     SRs[     "SS3L\_1j"] = n_lep_cut(2, is_reco=False) + " && {} >= 1".format(n_jets_25)
     SRs[        "SR3L1"] = n_lep_cut(3, is_reco=False) + " && {} == 0 && {} >= 4 && met > 150               ".format(n_bjets_20, n_jets_40)
     SRs[        "SR3L2"] = n_lep_cut(3, is_reco=False) + " && {} == 0 && {} >= 4 && met > 200 && meff > 1500".format(n_bjets_20, n_jets_40)
@@ -57,15 +71,5 @@ if not USE_RPV_SRS:
     SRs_reco[   "SR0b2"] = n_lep_cut(2, is_reco=True ) + " && n_bjets_20 == 0 && n_jets_40 >= 6 && met > 150 && meff >  900"
     SRs_reco[   "SR1b" ] = n_lep_cut(2, is_reco=True ) + " && n_bjets_20 >= 1 && n_jets_25 >= 6 && met > 200 && meff >  650"
     SRs_reco[   "SR3b" ] = n_lep_cut(2, is_reco=True ) + " && n_bjets_20 >= 3 && n_jets_25 >= 6 && met > 150 && meff >  600"
-
-else:
-    SRs[     "SR1b-DD" ] = n_lep_cut(2, is_reco=False) + " && {} >= 1 && {} >= 4 && meff > 1200".format(n_bjets_20, n_jets_50)
-    SRs[     "SR3b-DD" ] = n_lep_cut(2, is_reco=False) + " && {} >= 3 && {} >= 4 && meff > 1000".format(n_bjets_20, n_jets_50)
-    SRs[     "SR1b-GG" ] = n_lep_cut(2, is_reco=False) + " && {} >= 1 && {} >= 6 && meff > 1800".format(n_bjets_20, n_jets_50)
-
-    # just placeholders for now!
-    SRs_reco[     "SR1b-DD" ] = "1"
-    SRs_reco[     "SR3b-DD" ] = "1"
-    SRs_reco[     "SR1b-GG" ] = "1"
 
 
