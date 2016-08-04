@@ -16,7 +16,7 @@ from textwrap import dedent
 
 class Tabulator:
     def __init__(self, output_name=None, use_csv=False):
-        self.default_column_width = 25
+        self.default_column_width = 30
         self.use_csv = use_csv
         if output_name:
             # ensure non-.tex/non-.csv files are never overwritten by mistake

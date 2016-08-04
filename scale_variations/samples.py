@@ -4,7 +4,7 @@
 # primary functions to call:
 #   * get_sample_dict
 #   * get_sample_group_dict
-#   * get_nominal_dict
+#   * get_base_name
 #-------------------------------------------------------------------------------
 
 import os
@@ -12,7 +12,7 @@ import fnmatch
 from collections import OrderedDict, namedtuple
 from ROOT import TFile
 from sample_data import keys, sample_data
-from config import LUMI_TO_SCALE_TO, USE_SAMPLE_GROUPS, USE_RAW_LUMI, USE_RAW_N_EVENTS, VERBOSE
+from config import LUMI_TO_SCALE_TO, USE_SAMPLE_GROUPS, USE_RAW_LUMI, USE_RAW_N_EVENTS
 
 
 PB_TO_FB = 1000.0
@@ -50,7 +50,7 @@ def get_base_name(short_name):
     return "_".join(short_name.split("_")[:-1])
 
 
-def get_sample_group_dict(token):
+def get_sample_group_dict(token, verbose=False):
     sample_dict = get_sample_dict(token)
     sample_groups = OrderedDict()
     for s in sample_dict.values():
@@ -58,24 +58,13 @@ def get_sample_group_dict(token):
             continue
         if s.group not in sample_groups.keys():
             sample_groups[s.group] = []
-            if VERBOSE:
+            if verbose:
                 print "Added sample group: {}".format(s.group)
         sample_groups[s.group].append(s)
     return sample_groups
 
 
-def get_nominal_dict(token, sample_dict=None):
-    nominal_dict = OrderedDict()
-    if not sample_dict:
-        sample_dict = get_sample_dict(token)
-    for short_name, data in sample_dict.iteritems():
-        basename = get_base_name(short_name)
-        if short_name.endswith("_nom") and basename not in nominal_dict.keys():
-            nominal_dict[basename] = data
-    return nominal_dict
-
-
-def get_sample_dict(token):
+def get_sample_dict(token, verbose=False):
     sample_dict = OrderedDict()
     nominal_eff_xsec = {}
     for short_name, data in sample_data.iteritems():
@@ -120,7 +109,7 @@ def get_sample_dict(token):
                 raise Exception("nominal sample must come before variation sample in sample table for variation samples to be scaled correctly")
             scale_factor *= nominal_eff_xsec[base_name] / eff_xsec
         sample_dict[short_name] = Sample(short_name, group, root_file_pattern, is_reco, lumi, scale_factor)
-        if VERBOSE:
+        if verbose:
             print "Added sample: {}".format(short_name)
     return sample_dict
 

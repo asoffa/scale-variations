@@ -97,17 +97,28 @@ class Yield:
         if abs(s) < 1e-15:
             return Yield(integral, None)
 
-        stat_err = s/n * sqrt( (ds/s)**2 + (dn/n)**2 )
-        return Yield(n_weighted, stat_err, is_percent=True)
+        stat_err = s/n * sqrt( (ds/s)**2 + (dn/n)**2 ) * 100.
+        return Yield(integral, stat_err, is_percent=True)
 
     def latex_entry(self):
+        if self.n_weighted == None:
+            return "indeterminate"
         if self.is_percent:
-            if self.n_weighted < 0.01:
-                return "$< 0.01\% $"
-            return "${:.2f}\% \pm {:.2f}\%$".format(self.n_weighted, self.stat_err)
-        if self.n_weighted < 0.01:
-            return "$< 0.01$"
-        return "${:.2f} \pm {:.2f}$".format(self.n_weighted, self.stat_err)
+            if abs(self.n_weighted) < 0.01:
+                return "$< 0.01\%$"
+            if self.stat_err == None:
+                return "${:.2f}\, (\pm ??)\, \%$".format(self.n_weighted)
+            if self.stat_err < 0.01:
+                self.stat_err = 0.01
+            return "${:+.2f}\, (\pm {:.2f})\, \%$".format(self.n_weighted, self.stat_err)
+        else:
+            if abs(self.n_weighted) < 0.01:
+                return "$< 0.01$"
+            if self.stat_err == None:
+                return "${:.2f}\, (\pm ??)$".format(self.n_weighted)
+            if self.stat_err < 0.01:
+                self.stat_err = 0.01
+            return "${:.2f}\, (\pm {:.2f})$".format(self.n_weighted, self.stat_err)
 
     def csv_entry(self):
         if self.is_percent:
